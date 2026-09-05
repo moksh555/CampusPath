@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { SessionDashboard } from "@/features/sessions/SessionDashboard";
-import { request } from "@/lib/api";
+import { remove, request } from "@/lib/api";
 vi.mock("@/lib/api", () => ({
   request: vi.fn(),
   post: vi.fn(),
@@ -43,5 +49,47 @@ describe("sidebar collapse", () => {
     );
     expect(localStorage.getItem("campuspath:sidebar")).toBe("expanded");
     expect(document.querySelector("aside")).not.toHaveClass("collapsed");
+  });
+});
+describe("session deletion", () => {
+  beforeEach(() => {
+    vi.mocked(request).mockImplementation(((path: string) =>
+      Promise.resolve(
+        path === "/auth/me"
+          ? { name: "Ada" }
+          : [{ id: "s1", title: "My shortlist", major: "CS" }],
+      )) as typeof request);
+  });
+  it("confirms in-app instead of using a browser popup", async () => {
+    render(<SessionDashboard />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Delete My shortlist" }),
+    );
+    expect(
+      await screen.findByText(/will be permanently deleted/),
+    ).toBeInTheDocument();
+    expect(remove).not.toHaveBeenCalled();
+  });
+  it("keeps the session when cancelled", async () => {
+    render(<SessionDashboard />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Delete My shortlist" }),
+    );
+    const dialog = within(await screen.findByRole("dialog"));
+    fireEvent.click(dialog.getByRole("button", { name: "Cancel" }));
+    expect(remove).not.toHaveBeenCalled();
+    expect(screen.getByText("My shortlist")).toBeInTheDocument();
+  });
+  it("deletes the session when confirmed", async () => {
+    render(<SessionDashboard />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Delete My shortlist" }),
+    );
+    const dialog = within(await screen.findByRole("dialog"));
+    fireEvent.click(dialog.getByRole("button", { name: "Delete session" }));
+    await waitFor(() => expect(remove).toHaveBeenCalledWith("/chats/s1"));
+    await waitFor(() =>
+      expect(screen.queryByText("My shortlist")).not.toBeInTheDocument(),
+    );
   });
 });

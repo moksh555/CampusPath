@@ -4,6 +4,7 @@ import { request, post, remove } from "@/lib/api";
 import { Login } from "@/features/auth/Login";
 import { ComparisonView } from "@/features/comparison/ComparisonView";
 import { NewSession } from "./NewSession";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Comparison, Summary } from "./types";
 export function SessionDashboard() {
   const [user, setUser] = useState<{ name: string } | null>(null);
@@ -12,6 +13,8 @@ export function SessionDashboard() {
   const [active, setActive] = useState<Comparison | null>(null);
   const [create, setCreate] = useState(false);
   const [error, setError] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<Summary | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [collapsed, setCollapsed] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -50,6 +53,23 @@ export function SessionDashboard() {
       if (requestId === selection.current) setActive(result);
     } catch (e) {
       if (requestId === selection.current) setError((e as Error).message);
+    }
+  }
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await remove("/chats/" + pendingDelete.id);
+      selection.current += 1;
+      setSessions((v) => v.filter((s) => s.id !== pendingDelete.id));
+      setActive((current) =>
+        current?.id === pendingDelete.id ? null : current,
+      );
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setDeleting(false);
+      setPendingDelete(null);
     }
   }
   if (!loaded)
@@ -99,20 +119,7 @@ export function SessionDashboard() {
               </button>
               <button
                 aria-label={"Delete " + session.title}
-                onClick={async () => {
-                  if (!window.confirm("Delete this comparison session?"))
-                    return;
-                  try {
-                    await remove("/chats/" + session.id);
-                    selection.current += 1;
-                    setSessions((v) => v.filter((s) => s.id !== session.id));
-                    setActive((current) =>
-                      current?.id === session.id ? null : current,
-                    );
-                  } catch (e) {
-                    setError((e as Error).message);
-                  }
-                }}
+                onClick={() => setPendingDelete(session)}
               >
                 ×
               </button>
@@ -213,6 +220,16 @@ export function SessionDashboard() {
             setActive(value);
             setCreate(false);
           }}
+        />
+      )}
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Delete session"
+          message={`“${pendingDelete.title}” and all of its researched answers will be permanently deleted.`}
+          confirmLabel="Delete session"
+          busy={deleting}
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
         />
       )}
     </div>

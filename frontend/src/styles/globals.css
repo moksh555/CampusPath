@@ -136,6 +136,14 @@ h3 {
 .primary:hover {
   background: #d1f3e1;
 }
+.danger {
+  color: #ffc1bd;
+  background: #7e30252a;
+  border-color: #ffc1bd33;
+}
+.danger:hover {
+  background: #7e302548;
+}
 .eyebrow {
   font-size: 10px;
   letter-spacing: 2px;

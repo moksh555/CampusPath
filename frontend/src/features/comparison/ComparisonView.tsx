@@ -4,6 +4,7 @@ import type { Comparison } from "@/features/sessions/types";
 import { post, patch, remove, request } from "@/lib/api";
 import { UniversityPicker } from "@/features/universities/UniversityPicker";
 import { Modal } from "@/components/Modal";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ResultCell } from "./ResultCell";
 export function ComparisonView({
   comparison,
@@ -16,6 +17,11 @@ export function ComparisonView({
   const [adding, setAdding] = useState<"university" | "column" | null>(null);
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<{
+    kind: "column" | "college";
+    id: string;
+    label: string;
+  } | null>(null);
   const base = "/chats/" + comparison.id;
   const cells = comparison.colleges.flatMap((row) => row.cells);
   const running = cells.some((cell) =>
@@ -128,7 +134,11 @@ export function ComparisonView({
                       aria-label={"Remove " + column.label}
                       disabled={busy}
                       onClick={() =>
-                        mutate(() => remove(base + "/columns/" + column.id))
+                        setPending({
+                          kind: "column",
+                          id: column.id,
+                          label: column.label,
+                        })
                       }
                     >
                       ×
@@ -164,7 +174,11 @@ export function ComparisonView({
                       className="text-button"
                       disabled={busy}
                       onClick={() =>
-                        mutate(() => remove(base + "/colleges/" + row.id))
+                        setPending({
+                          kind: "college",
+                          id: row.id,
+                          label: row.name,
+                        })
                       }
                     >
                       Remove university
@@ -241,6 +255,33 @@ export function ComparisonView({
             </p>
           )}
         </Modal>
+      )}
+      {pending && (
+        <ConfirmDialog
+          title={
+            pending.kind === "column" ? "Remove question" : "Remove university"
+          }
+          message={
+            pending.kind === "column"
+              ? `“${pending.label}” and every answer collected for it will be removed.`
+              : `“${pending.label}” and all of its answers will be removed from this comparison.`
+          }
+          confirmLabel={
+            pending.kind === "column" ? "Remove question" : "Remove university"
+          }
+          busy={busy}
+          onConfirm={async () => {
+            await mutate(() =>
+              remove(
+                base +
+                  (pending.kind === "column" ? "/columns/" : "/colleges/") +
+                  pending.id,
+              ),
+            );
+            setPending(null);
+          }}
+          onCancel={() => setPending(null)}
+        />
       )}
     </section>
   );

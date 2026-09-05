@@ -1,8 +1,14 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { ComparisonView } from "@/features/comparison/ComparisonView";
 import type { Comparison } from "@/features/sessions/types";
-import { post, request } from "@/lib/api";
+import { post, remove, request } from "@/lib/api";
 
 vi.mock("@/lib/api", () => ({
   post: vi.fn(),
@@ -72,4 +78,42 @@ it("adds a natural-language question and reloads the saved comparison", async ()
   expect(post).toHaveBeenCalledWith("/chats/session/columns", {
     label: "STEM courses offered",
   });
+});
+
+const dialog = () => within(screen.getByRole("dialog"));
+
+it("asks before removing a question and does nothing when cancelled", async () => {
+  render(<ComparisonView comparison={fixture} onChange={() => {}} />);
+  fireEvent.click(screen.getByRole("button", { name: "Remove Annual fees" }));
+  expect(
+    await screen.findByText(/every answer collected for it will be removed/),
+  ).toBeInTheDocument();
+  expect(remove).not.toHaveBeenCalled();
+  fireEvent.click(dialog().getByRole("button", { name: "Cancel" }));
+  expect(remove).not.toHaveBeenCalled();
+});
+
+it("removes a question once confirmed", async () => {
+  vi.mocked(request).mockResolvedValue(fixture);
+  render(<ComparisonView comparison={fixture} onChange={() => {}} />);
+  fireEvent.click(screen.getByRole("button", { name: "Remove Annual fees" }));
+  await screen.findByRole("dialog");
+  fireEvent.click(dialog().getByRole("button", { name: "Remove question" }));
+  await waitFor(() =>
+    expect(remove).toHaveBeenCalledWith("/chats/session/columns/fees"),
+  );
+});
+
+it("warns that removing a university discards its answers, then removes it", async () => {
+  vi.mocked(request).mockResolvedValue(fixture);
+  render(<ComparisonView comparison={fixture} onChange={() => {}} />);
+  fireEvent.click(screen.getByRole("button", { name: "Remove university" }));
+  expect(
+    await screen.findByText(/all of its answers will be removed/),
+  ).toBeInTheDocument();
+  expect(remove).not.toHaveBeenCalled();
+  fireEvent.click(dialog().getByRole("button", { name: "Remove university" }));
+  await waitFor(() =>
+    expect(remove).toHaveBeenCalledWith("/chats/session/colleges/school"),
+  );
 });
