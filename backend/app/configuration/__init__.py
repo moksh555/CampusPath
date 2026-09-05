@@ -1,0 +1,1 @@
+"""CampusPath package."""

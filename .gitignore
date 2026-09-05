@@ -1,0 +1,38 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Env and secrets
+.env
+.env.local
+.env.test
+.env*.local
+
+# Node
+node_modules/
+.next/
+dist/
+
+# OS
+.DS_Store
+
+# Replaced offloaded local dependencies
+.venv-offloaded/
+node_modules-offloaded/
+*.tsbuildinfo
+.pytest_cache/
+
+.previous-dependencies/
+
+.venv-incomplete/
+.ruff_cache/
+
+# Local development notes, not published
+DEVELOPMENT.md
