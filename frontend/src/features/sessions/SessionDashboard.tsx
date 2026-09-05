@@ -12,7 +12,18 @@ export function SessionDashboard() {
   const [active, setActive] = useState<Comparison | null>(null);
   const [create, setCreate] = useState(false);
   const [error, setError] = useState("");
+  const [collapsed, setCollapsed] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.localStorage.getItem("campuspath:sidebar") === "collapsed",
+  );
   const selection = useRef(0);
+  useEffect(() => {
+    window.localStorage.setItem(
+      "campuspath:sidebar",
+      collapsed ? "collapsed" : "expanded",
+    );
+  }, [collapsed]);
   useEffect(() => {
     request<{ name: string }>("/auth/me")
       .then(setUser)
@@ -50,12 +61,27 @@ export function SessionDashboard() {
   if (!user) return <Login />;
   return (
     <div className="app-shell">
-      <aside className="sidebar glass">
-        <a className="wordmark" href="/">
-          <span className="brand-mark">C</span>CampusPath
-        </a>
-        <button className="new-session" onClick={() => setCreate(true)}>
-          ＋ New session
+      <aside className={"sidebar glass" + (collapsed ? " collapsed" : "")}>
+        <div className="sidebar-head">
+          <a className="wordmark" href="/">
+            <span className="brand-mark">C</span>
+            <span className="wordmark-text">CampusPath</span>
+          </a>
+          <button
+            className="sidebar-toggle"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!collapsed}
+            onClick={() => setCollapsed((value) => !value)}
+          >
+            {collapsed ? "»" : "«"}
+          </button>
+        </div>
+        <button
+          className="new-session"
+          title="New session"
+          onClick={() => setCreate(true)}
+        >
+          ＋ <span className="label">New session</span>
         </button>
         <p className="eyebrow">
           YOUR SESSIONS <span>{sessions.length}</span>
@@ -68,7 +94,7 @@ export function SessionDashboard() {
               }
               key={session.id}
             >
-              <button onClick={() => open(session.id)}>
+              <button title={session.title} onClick={() => open(session.id)}>
                 ◈ <span>{session.title}</span>
               </button>
               <button
