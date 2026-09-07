@@ -1,0 +1,37 @@
+services:
+  auth:
+    build: ./auth_service
+    env_file: ./auth_service/.env
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  platform:
+    build: ./platform_service
+    env_file: ./platform_service/.env
+    environment:
+      AUTH_SERVICE_URL: http://auth:8001
+    ports:
+      - "8000:8000"
+    depends_on:
+      auth:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  research:
+    build: ./research_service
+    env_file: ./research_service/.env
+    environment:
+      PLATFORM_SERVICE_URL: http://platform:8000
+    depends_on:
+      platform:
+        condition: service_healthy
+    restart: unless-stopped

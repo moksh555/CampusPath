@@ -6,6 +6,8 @@ export type Cell = {
   value: string;
   sources: { title: string; url: string }[];
   researched_at: string | null;
+  error_code?: string | null;
+  error_message?: string | null;
 };
 export type Row = University & {
   id: string;

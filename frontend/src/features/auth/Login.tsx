@@ -15,7 +15,7 @@ export function Login({ error }: { error?: string }) {
           Explore universities around the world. Ask the questions that matter.
           Find your own path.
         </p>
-        <a className="primary google" href={config.apiUrl + "/auth/login"}>
+        <a className="primary google" href={config.authUrl + "/auth/login"}>
           Continue with Google <span>↗</span>
         </a>
         {error && <p className="muted">{error}</p>}

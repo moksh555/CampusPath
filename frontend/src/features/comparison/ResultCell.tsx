@@ -10,6 +10,7 @@ export function ResultCell({ cell }: { cell?: Cell }) {
         </span>
       )}
       {cell.value && <p>{cell.value}</p>}
+      {cell.error_message && <small role="status">{cell.error_message}</small>}
       {cell.status === "completed" && !cell.sources?.length && (
         <small>No source links returned</small>
       )}

@@ -5,7 +5,8 @@ export async function request<T>(
   options: RequestInit = {},
   retry = true,
 ): Promise<T> {
-  const response = await fetch(config.apiUrl + path, {
+  const baseUrl = path.startsWith("/auth/") ? config.authUrl : config.apiUrl;
+  const response = await fetch(baseUrl + path, {
     signal: AbortSignal.timeout(20000),
     ...options,
     credentials: "include",
@@ -13,7 +14,7 @@ export async function request<T>(
   });
   if (response.status === 401 && retry && path !== "/auth/refresh") {
     if (!refreshing)
-      refreshing = fetch(config.apiUrl + "/auth/refresh", {
+      refreshing = fetch(config.authUrl + "/auth/refresh", {
         method: "POST",
         signal: AbortSignal.timeout(20000),
         credentials: "include",

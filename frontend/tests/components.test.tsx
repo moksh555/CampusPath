@@ -102,7 +102,7 @@ it("offers Google as the only sign-in method", () => {
   render(<Login />);
   expect(
     screen.getByRole("link", { name: /Continue with Google/ }),
-  ).toHaveAttribute("href", "http://localhost:8000/auth/login");
+  ).toHaveAttribute("href", "http://localhost:8001/auth/login");
   expect(screen.queryByRole("textbox")).toBeNull();
 });
 
@@ -120,4 +120,14 @@ it("loads the directory on focus and searches locally while typing", async () =>
   fireEvent.change(input, { target: { value: "france" } });
   expect(await screen.findByRole("button", { name: "Other Institute France" })).toBeInTheDocument();
   expect(request).toHaveBeenCalledExactlyOnceWith("/colleges/directory");
+});
+
+it("shows a retryable no-content research error", () => {
+  render(<ResultCell cell={{
+    id: "failed-cell", column_id: "fees", status: "failed", value: "",
+    sources: [], researched_at: null, error_code: "no_content",
+    error_message: "The research agent returned no content. Retry this research.",
+  }} />);
+  expect(screen.getByText("The research agent returned no content. Retry this research.")).toBeInTheDocument();
+  expect(screen.getByText("failed")).toBeInTheDocument();
 });
